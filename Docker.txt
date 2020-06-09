@@ -551,7 +551,203 @@ Outline the sizing requirements prior to installation
          If a CA certificate is accidentally given the extension .cert instead of the correct .crt extension, the Docker daemon logs the following error message:
         
            Missing key KEY_NAME for client certificate CERT_NAME. CA certificates should use the extension .crt.
-68. 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+NETWORKING:
+Use a load balancer Docker EE
+
+
+1. To set the DNS server for all Docker containers, use: $ sudo dockerd --dns 8.8.8.8
+2. To set the DNS search domain for all Docker containers, use: sudo dockerd --dns-search example.com
+3. Some options can be reconfigured when the daemon is running without requiring to restart the process. We use the SIGHUP signal in Linux to reload.
+4. live-restore: Enables keeping containers alive during daemon downtime.
+5. By default, Docker Engine connects container via a default bridge to the network of the node.
+6. In terms of Docker, a bridge network uses a software bridge which allows containers connected to the same bridge network to communicate, while providing isolation from containers which are not connected to that bridge network. 
+7. Bridge networks apply to containers running on the same Docker daemon host. For communication among containers running on different Docker daemon hosts, you can either manage routing at the OS level, or you can use an overlay network.
+8. User-defined bridges provide automatic DNS resolution between containers.
+9. Containers on the default bridge network can only access each other by IP addresses, unless you use the --link option, which is considered legacy. 
+    On a user-defined bridge network, containers can resolve each other by name or alias.
+10. User-defined bridges provide better isolation.
+11. Using a user-defined network provides a scoped network in which only containers attached to that network are able to communicate.
+12. Containers can be attached and detached from user-defined networks on the fly.
+13. To remove a container from the default bridge network, you need to stop the container and recreate it with different network options.
+14. Each user-defined network creates a configurable bridge.
+15. If your containers use the default bridge network, you can configure it, but all the containers use the same settings, such as MTU and iptables rules. In addition, configuring the default bridge network happens outside of Docker itself, and requires a restart of Docker.
+16. User-defined bridge networks are created and configured using docker network create. If different groups of applications have different network requirements, you can configure each user-defined bridge separately, as you create it.
+17. Linked containers on the default bridge network share environment variables.
+18. Originally, the only way to share environment variables between two containers was to link them using the --link flag. This type of variable sharing is not possible with user-defined networks.
+19. There are superior ways to share environment variables. A few ideas:
+    Multiple containers can mount a file or directory containing the shared information, using a Docker volume.
+    Multiple containers can be started together using docker-compose and the compose file can define the shared variables.
+    You can use swarm services instead of standalone containers, and take advantage of shared secrets and configs.
+20. Containers connected to the same user-defined bridge network effectively expose all ports to each other. For a port to be accessible to containers or non-Docker hosts on different networks, that port must be published using the -p or --publish flag.
+21. Use the docker network create command to create a user-defined bridge network: $ docker network create my-net
+22. Use the docker network rm command to remove a user-defined bridge network: $ docker network rm my-net.
+23. When you create a new container, you can specify one or more --network flags. 
+24. To connect a running container to an existing user-defined bridge, use the docker network connect command: $ docker network connect my-net my-nginx
+25. To disconnect a running container from a user-defined bridge, use the docker network disconnect command. docker network disconnect my-net my-nginx
+26. You can specify the subnet, the IP address range, the gateway, and other options. See the docker network create reference or the output of docker network create --help for details.
+27. By default, traffic from containers connected to the default bridge network is not forwarded to the outside world. To enable forwarding, you need to change two settings. 
+         These are not Docker commands and they affect the Docker host’s kernel. 
+                1. Configure the Linux kernel to allow IP forwarding. $ sysctl net.ipv4.conf.all.forwarding=1
+                2. Change the policy for the iptables FORWARD policy from DROP to ACCEPT. $ sudo iptables -P FORWARD ACCEPT
+28. The default bridge network is considered a legacy detail of Docker and is not recommended for production use. Configuring it is a manual operation, and it has technical shortcomings.
+29. Containers connected to the default bridge network can communicate, but only by IP address, unless they are linked using the legacy --link flag.
+30. To configure the default bridge network, you specify options in daemon.json. Here is an example daemon.json with several options specified. 
+       {
+  "bip": "192.168.1.5/24",
+  "fixed-cidr": "192.168.1.5/25",
+  "fixed-cidr-v6": "2001:db8::/64",
+  "mtu": 1500,
+  "default-gateway": "10.20.1.1",
+  "default-gateway-v6": "2001:db8:abcd::89",
+  "dns": ["10.20.1.2","10.20.1.3"]
+}
+
+
+31. The DRIVER accepts bridge or overlay which are the built-in network drivers. 
+     If you don’t specify the --driver option, the command automatically creates a bridge network for you: $ docker network create -d bridge my-bridge-network
+
+32. Bridge networks are isolated networks on a single Engine installation. If you want to create a network that spans multiple Docker hosts each running an Engine, you must create an overlay network.
+33. overlay networks require some pre-existing conditions before you can create one. These conditions are:
+	Access to a key-value store. Engine supports Consul, Etcd, and ZooKeeper (Distributed store) key-value stores.
+        A cluster of hosts with connectivity to the key-value store.
+	A properly configured Engine daemon on each host in the cluster.
+34. The dockerd options that support the overlay network are:
+	--cluster-store
+	--cluster-store-opt
+	--cluster-advertise
+35. It is a good idea to install Docker Swarm to manage the cluster that makes up your network. Swarm provides sophisticated discovery and server management tools that can assist your implementation.
+36. Command to create overlay network: $ docker network create -d overlay my-multihost-network
+37. You should create overlay networks with /24 blocks (the default), which limits you to 256 IP addresses, when you create networks using the default VIP-based endpoint-mode. 
+38. If you need more than 256 IP addresses, do not increase the IP block size. You can either use dnsrr endpoint mode with an external load balancer, or use multiple smaller overlay networks. 
+39. When you start a container, use the --network flag to connect it to a network. This example adds the busybox container to the mynet network:
+        $ docker run -itd --network=mynet busybox
+40. When you create a network, Engine creates a non-overlapping subnetwork for the network by default. This subnetwork is not a subdivision of an existing network. It is purely for ip-addressing purposes. 
+     You can override this default and specify subnetwork values directly using the --subnet option. On a bridge network you can only create a single subnet:
+     $ docker network create --driver=bridge --subnet=192.168.0.0/16 br0
+41. By default, when you connect a container to an overlay network, Docker also connects a bridge network to it to provide external connectivity. If you want to create an externally isolated overlay network, you can specify the --internal option.
+42. You can create the network which will be used to provide the routing-mesh in the swarm cluster. You do so by specifying --ingress when creating the network. Only one ingress network can be created at the time.
+43. docker network prune: Remove all unused networks
+44. The Docker networking architecture is built on a set of interfaces called the Container Networking Model (CNM).
+45. Components of Container Networking Model (CNM): Sandbox, Endpoint, Network.
+46. Sandbox:  contains the configuration of a container's network stack. This includes the management of the container's interfaces, routing table, and DNS settings.
+47. Endpoint — An Endpoint joins a Sandbox to a Network. 
+48. Network - A Network is a collection of endpoints that have connectivity between them. Endpoints that are not connected to a network do not have connectivity on a network.
+49. There are two broad types of CNM network drivers:
+	1. Native Network Drivers: 
+	2. Remote Network Drivers 
+50. Native network drivers: Host, Bridge, Overlay, MACVLAN, None.
+51. Host- With the host driver, a container uses the networking stack of the host. There is no namespace separation, and all interfaces on the host can be used directly by the container.
+52. Bridge- The bridge driver creates a Linux bridge on the host that is managed by Docker. By default containers on a bridge can communicate with each other. External access to containers can also be configured through the bridge driver.
+53. Overlay- The overlay driver creates an overlay network that supports multi-host networks out of the box. It uses a combination of local Linux bridges and VXLAN to overlay container-to-container communications over physical network infrastructure.
+54. MACVLAN- The macvlan driver uses the Linux MACVLAN bridge mode to establish a connection between container interfaces and a parent host interface (or sub-interfaces). It can be used to provide IP addresses to containers that are routable on the physical network. Additionally VLANs can be trunked to the macvlan driver to enforce Layer 2 container segmentation.
+55. None- The none driver gives a container its own networking stack and network namespace but does not configure interfaces inside the container. Without additional configuration, the container is completely isolated from the host networking stack.
+56. Docker Remote Network Drivers: contiv, weave, kuryr
+57. Docker Remote IPAM Drivers: infoblox
+58. There are several Linux networking building blocks which Docker uses to implement its native CNM network drivers. This list includes Linux bridges, network namespaces, veth pairs, and iptables. 
+59. A Linux bridge is a Layer 2 device that is the virtual implementation of a physical switch inside the Linux kernel. It forwards traffic based on MAC addresses which it learns dynamically by inspecting traffic.
+60. A Linux network namespace is an isolated network stack in the kernel with its own interfaces, routes, and firewall rules. It is a security aspect of containers and Linux, used to isolate containers.
+61. Network namespaces ensure that two containers on the same host aren't able to communicate with each other or even the host itself unless configured to do so via Docker networks.
+     The host network namespace contains the host interfaces and host routing table.
+62. A virtual ethernet device or veth is a Linux networking interface that acts as a connecting wire between two network namespaces.A veth is a full duplex link that has a single interface in each namespace.
+63. Bridge: The default network driver. If you don’t specify a driver, this is the type of network you are creating. Bridge networks are usually used when your applications run in standalone containers that need to communicate. 
+64. Host: For standalone containers, remove network isolation between the container and the Docker host, and use the host’s networking directly.
+     If you use the host network mode for a container, that container’s network stack is not isolated from the Docker host (the container shares the host’s networking namespace), and the container does not get its own IP-address allocated. 
+65. Host mode networking can be useful to optimize performance, and in situations where a container needs to handle a large range of ports, as it does not require network address translation (NAT), and no “userland-proxy” is created for each port.
+66. You can also use a host network for a swarm service, by passing --network host to the docker service create command.
+67. overlay: Overlay networks connect multiple Docker daemons together and enable swarm services to communicate with each other.
+68. You need the following ports open to traffic to and from each Docker host participating on an overlay network:
+        TCP port 2377 for cluster management communications
+        TCP and UDP port 7946 for communication among nodes
+	UDP port 4789 for overlay network traffic
+69. To create an overlay network for use with swarm services, use a command like the following:$ docker network create -d overlay my-overlay
+70. To create an overlay network which can be used by swarm services or standalone containers to communicate with other standalone containers running on other Docker daemons, add the --attachable flag:
+       $ docker network create -d overlay --attachable my-attachable-overlay
+71. All swarm service management traffic is encrypted by default using the AES algorithm in GCM mode.
+72. To encrypt application data as well, add --opt encrypted when creating the overlay network. 
+73. Overlay network encryption is not supported on Windows. If a Windows node attempts to connect to an encrypted overlay network, no error is detected but the node cannot communicate.
+74. You can use the overlay network feature with both --opt encrypted --attachable and attach unmanaged containers to that network:
+     $ docker network create --opt encrypted --driver overlay --attachable my-attachable-multi-host-network
+75. Customizing the ingress network involves removing and recreating it. This is usually done before you create any services in the swarm. If you have existing services which publish ports, those services need to be removed before you can remove the ingress network.
+76. The docker_gwbridge is a virtual bridge that connects the overlay networks (including the ingress network) to an individual Docker daemon’s physical network. 
+     Docker creates it automatically when you initialize a swarm or join a Docker host to a swarm, but it is not a Docker device. 
+77. Swarm services connected to the same overlay network effectively expose all ports to each other.
+78. For a port to be accessible outside of the service, that port must be published using the -p or --publish flag on docker service create or docker service update
+79. -p 8080:80 or -p published=8080,target=80: Map TCP port 80 on the service to port 8080 on the routing mesh.
+80. -p 8080:80/udp or -p published=8080,target=80,protocol=udp: Map UDP port 80 on the service to port 8080 on the routing mesh.
+81. -p 8080:80/tcp -p 8080:80/udp or -p published=8080,target=80,protocol=tcp -p published=8080,target=80,protocol=udp:
+          Map TCP port 80 on the service to TCP port 8080 on the routing mesh, and map UDP port 80 on the service to UDP port 8080 on the routing mesh.
+82. By default, swarm services which publish ports do so using the routing mesh. Services using the routing mesh are running in virtual IP (VIP) mode. 
+83. When using the routing mesh, there is no guarantee about which Docker node services client requests.
+84. To bypass the routing mesh, you can start a service using DNS Round Robin (DNSRR) mode, by setting the --endpoint-mode flag to dnsrr.
+85. By default, control traffic relating to swarm management and traffic to and from your applications runs over the same network, though the swarm control traffic is encrypted.
+86. You can configure Docker to use separate network interfaces for handling the two different types of traffic. When you initialize or join the swarm, specify --advertise-addr and --datapath-addr separately. You must do this for each node joining the swarm.
+87. macvlan: Macvlan networks allow you to assign a MAC address to a container, making it appear as a physical device on your network. The Docker daemon routes traffic to containers by their MAC addresses.
+88. none: For this container, disable all networking. Usually used in conjunction with a custom network driver. none is not available for swarm services. 
+89. User-defined bridge networks are best when you need multiple containers to communicate on the same Docker host.
+90. Host networks are best when the network stack should not be isolated from the Docker host, but you want other aspects of the container to be isolated.
+91. Overlay networks are best when you need containers running on different Docker hosts to communicate, or when multiple applications work together using swarm services.
+92. Macvlan networks are best when you are migrating from a VM setup or need your containers to look like physical hosts on your network, each with a unique MAC address.
+93. Third-party network plugins allow you to integrate Docker with specialized network stacks.
+94. List port mappings or a specific mapping for the container: docker port CONTAINER [PRIVATE_PORT[/PROTO]]
+95. Basically, you can look up every port which is exposed by using docker inspect CONTAINER on every container. However, to just get the port binding information, you could use docker port CONTAINER.
+96. To troubleshoot problems with container communication, you can use docker network inspect of the different containers to see, whether those containers are connected through the same network.
+97. The traffic between DTR and UCP is always encrypted to ensure security. 
+98. Traffic between containers is not encrypted by default
+99. Docker focuses on three key areas of container security: secure access, secure content, and secure platform. 
+100. By default the user inside the container is root. Using a defense in depth model, it is recommended that not all containers run as root. An easy way to mitigate this is to use the --user declaration at run time. 
+101. Seccomp (short for Secure Computing Mode) is a security feature of the Linux kernel, used to restrict the syscalls available to a given process.
+102. Seccomp profiles are applied at container creation time and cannot be altered for running containers.
+103. AppArmor and SELinux are security modules similar to Seccomp in their use of profiles, however they differ in how those profiles are executed. 
+      They need to be enabled on the host, while SELinux can be enabled at the daemon level. To enable SELinux in the Docker daemon, modify /etc/docker/daemon.json and add the following:
+         {
+           "selinux-enabled": true
+		}
+104. To check if SELinux is enabled:   docker info --format '{{.SecurityOptions}}'
+105. Content Trust is the cryptographic guarantee that the image pulled is the correct image. export DOCKER_CONTENT_TRUST=1
+106. UCP out of the box delivers with two Certificate Authorities (CA) with Mutual TLS. The two CAs set up by UCP include:
+       The first CA is used for ALL internal communication between managers and workers
+       The second CA is for the end user communication.
+107. Worker nodes are unprivileged, meaning they do not have access to the cluster state or secrets. When adding nodes to the UCP cluster, a join token must be used
+108. The client bundle allows end users to securely connect from a Docker Client to UCP via certificates when deploying workloads and administering the environment.
+109. Docker Enterprise Access Control is a policy-based model that uses access control lists (ACLs) called grants to dictate access between users and cluster resources. A grant ties together who, has permission for which actions, against what resources.
+110. UCP also provides default roles that are pre-created. These are common role types that can be used to ease the burden of creating custom roles.
+      None: The user has no access to swarm resources. This maps to the No Access role in UCP 2.1.x.
+      View Only	: The user can view resources like services, volumes, and networks but can't create them.
+      Restricted Control: 
+      Scheduler
+      Full Control:
+111. Docker Enterprise enables controlling access to swarm resources by using collections. 	                       
+112. The routing mesh enables each node in the swarm to accept connections on published ports for any service running in the swarm, even if there’s no task running on the node.
+113. To use the ingress network in the swarm, you need to have the following ports open between the swarm nodes before you enable swarm mode:
+         Port 7946 TCP/UDP for container network discovery.
+         Port 4789 UDP for the container ingress network.
+114. Use the --publish flag to publish a port when you create a service. target is used to specify the port inside the container, and published is used to specify the port to bind on the routing mesh.
+115. The <PUBLISHED-PORT> is the port where the swarm makes the service available. If you omit it, a random high-numbered port is bound. The <CONTAINER-PORT> is the port where the container listens.
+      $ docker service create \
+  --name my-web \
+  --publish published=8080,target=80 \
+  --replicas 2 \
+  nginx
+116. You can publish a port for an existing service using the following command:
+          $ docker service update \
+  --publish-add published=<PUBLISHED-PORT>,target=<CONTAINER-PORT> \
+  <SERVICE>
+
+117. You can use docker service inspect to view the service’s published port. For instance:
+      docker service inspect --format="{{json .Endpoint.Spec.Ports}}" my-web
+
+       [{"Protocol":"tcp","TargetPort":80,"PublishedPort":8080}]
+
+118. By default, when you publish a port, it is a TCP port. dns-cache 
+119. You can configure an external load balancer for swarm services, either in combination with the routing mesh or without using the routing mesh at all.
+120. To use an external load balancer without the routing mesh, set --endpoint-mode to dnsrr.
+121. Docker uses a concept called services to deploy applications. Services consist of containers created from the same image. Each service consists of tasks that execute on worker nodes and define the state of the application.
+122. 
+
+
+
+
 
 
 
