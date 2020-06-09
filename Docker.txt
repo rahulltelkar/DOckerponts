@@ -440,6 +440,166 @@ IMAGE MANAGEMENT AND REGISTRY.
 145. Remove unused images: docker image prune [OPTIONS]
 146. Search the Docker Hub for images: docker search [OPTIONS] TERM
 147. Images are stored in collections, known as a repository, which is keyed by a name, as seen throughout the API specification.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+INSTALLATION AND CONFIGURATION.
+Complete configuration of backups for UCP and DTR
+Consistently repeat steps to deploy Docker engine UCP and DTR on AWS and on premises in an HA config
+Outline the sizing requirements prior to installation
+
+
+1. How to configure Docker to start on boot?: sudo systemctl enable docker
+2. Docker includes multiple logging mechanisms to help you get information from running containers and services. These mechanisms are called logging drivers.
+3. The default logging driver is json-file.
+4. set the value of log-driver to the name of the logging driver in the daemon.json file, which is located in /etc/docker/ on Linux hosts or C:\ProgramData\docker\config\ on Windows server hosts. 
+5. If the logging driver has configurable options, you can set them in the daemon.json file as a JSON object with the key log-opts. 
+        {
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3",
+    "labels": "production_status",
+    "env": "os,customer"
+  }
+}
+6. To find the current default logging driver for the Docker daemon, run docker info and search for Logging Driver.
+7. To find the current logging driver for a running container, if the daemon is using the json-file logging driver, run the following docker inspect command.
+8. Docker provides two modes for delivering messages from the container to the log driver: 
+    (default) direct,  blocking delivery from container to driver.
+    non-blocking delivery that stores log messages in an intermediate per-container ring buffer for consumption by driver.
+9. The non-blocking message delivery mode prevents applications from blocking due to logging back pressure.
+10. The mode log option controls whether to use the blocking (default) or non-blocking message delivery.
+11. The max-buffer-size log option controls the size of the ring buffer used for intermediate message storage when mode is set to non-blocking. max-buffer-size defaults to 1 megabyte.
+        $ docker run -it --log-opt mode=non-blocking --log-opt max-buffer-size=4m alpine ping 127.0.0.1
+12. Supported logging drivers: none, local, json-file, syslog, journald, gelf, fluentd, awslogs, splunk, etwlogs, gcplogs, logentries.
+13. When using Docker Community Engine, the docker logs command is only available on the following drivers:local, json-file, journald.
+14. Reading log information requires decompressing rotated log files, which causes a temporary increase in disk usage.
+15. On a typical installation the Docker daemon is started by a system utility, not manually by a user. This makes it easier to automatically start Docker when the machine reboots.
+16. There are two ways to configure the Docker daemon:
+      Use a JSON configuration file. This is the preferred option, since it keeps all configurations in a single place.
+      Use flags when starting dockerd.
+17. To configure the Docker daemon using a JSON file, create a file at /etc/docker/daemon.json on Linux systems, or C:\ProgramData\docker\config\daemon.json
+18. The Docker daemon can listen for Docker Engine API requests via three different types of Socket: unix, tcp, and fd. 
+19. By default, a unix domain socket (or IPC socket) is created at /var/run/docker.sock
+20. On Linux, the Docker daemon has support for several different image layer storage drivers: aufs, devicemapper, btrfs, zfs, overlay and overlay2.
+21. The aufs driver is the oldest, but is based on a Linux kernel patch-set that is unlikely to be merged into the main kernel.aufs allows containers to share executable and shared library memory, 
+      so is a useful choice when running thousands of containers with the same program or libraries.
+22. The devicemapper driver uses thin provisioning and Copy on Write (CoW) snapshots. For each devicemapper graph location – typically /var/lib/docker/devicemapper.
+23. If using a block device for device mapper storage, it is best to use lvm to create and manage the thin-pool volume.
+24. The highlights of the lvm-based thin-pool management feature include:
+      automatic or interactive thin-pool resize support, dynamically changing thin-pool features, automatic thinp metadata checking when lvm activates the thin-pool, etc.
+25. You can configure the Docker daemon to use a different directory, using the data-root configuration option.
+26. If the daemon is completely non-responsive, you can also force a full stack trace of all threads to be added to the daemon log by sending the SIGUSR signal to the Docker daemon.
+27. unable to configure the Docker daemon with file /etc/docker/daemon.json:
+           the following directives are specified both as a flag and in the configuration
+           file: hosts: (from flag: [unix:///var/run/docker.sock], from file: [tcp://127.0.0.1:2376])
+    If you see an error similar to this one and you are starting the daemon manually with flags, you may need to adjust your flags or the daemon.json to remove the conflict.
+28. On Debian and Ubuntu systems using systemd, this means that a host flag -H is always used when starting dockerd. If you specify a hosts entry in the daemon.json, this causes a configuration conflict (as in the above message) and Docker fails to start.
+    To work around this problem, create a new file /etc/systemd/system/docker.service.d/docker.conf with the following contents, to remove the -H argument that is used when starting the daemon by default.
+              [Service]
+	      ExecStart=
+              ExecStart=/usr/bin/dockerd
+29. There are two ways to enable debugging. The recommended approach is to set the debug key to true in the daemon.json file. This method works for every Docker platform.
+30. Send a HUP signal to the daemon to cause it to reload its configuration. On Linux hosts, use the following command.
+         $ sudo kill -SIGHUP $(pidof dockerd)
+31. If the daemon is unresponsive, you can force a full stack trace to be logged by sending a SIGUSR1 signal to the daemon.
+             $ sudo kill -SIGUSR1 $(pidof dockerd)
+32. The operating-system independent way to check whether Docker is running is to ask Docker, using the docker info command.
+33. ou can also use operating system utilities, such as sudo systemctl is-active docker or sudo status docker or sudo service docker status.
+34. Finally, you can check in the process list for the dockerd process, using commands like ps or top.
+35. Docker Enterprise include the following components:
+     Docker Engine - Enterprise. the commercially supported Docker container runtime
+     Universal Control Plane (UCP), the web-based, unified cluster and application management solution
+     Docker Kubernetes Service (DKS), a certified Kubernetes distribution with 'sensible secure defaults' out-of-the-box.
+     Docker Trusted Registry (DTR), a resilient and secure image management repository
+     Docker Desktop Enterprise (DDE), an enterprise friendly, supported version of the popular Docker Desktop application with an extended feature set.
+     
+36. Docker Engine - Enterprise is responsible for container-level operations, interaction with the OS, providing the Docker API, and running the Swarm cluster. 
+37. Universal Control Plane -Enterprise by providing an integrated application management platform. It is both the main interaction point for users and the integration point for applications.
+38. Docker Trusted Registry - the registry to store and distribute images, an image signing service, a Web UI, an API, and data stores for image metadata and DTR state.
+39. Docker provides the ability to package and run an application in a loosely isolated environment called a container.
+40. Docker Engine is a client-server application with these major components:
+	A server which is a type of long-running program called a daemon process (the dockerd command).
+        A REST API which specifies interfaces that programs can use to talk to the daemon and instruct it what to do.
+	A command line interface (CLI) client (the docker command).
+	The daemon creates and manages Docker objects, such as images, containers, networks, and volumes.
+50. Docker uses a client-server architecture. The Docker client talks to the Docker daemon, which does the heavy lifting of building, running, and distributing your Docker containers.        
+51. The Docker client and daemon can run on the same system, or you can connect a Docker client to a remote Docker daemon.
+52. The Docker client and daemon communicate using a REST API, over UNIX sockets or a network interface. The Docker daemon (dockerd) listens for Docker API requests and manages Docker objects such as images, containers, networks, and volumes.
+53. An image is a read-only template with instructions for creating a Docker container.
+54. A container is a runnable instance of an image. ou can create, start, stop, move, or delete a container using the Docker API or CLI.
+55. By default, containers can connect to external networks using the host machine’s network connection.
+56. Each member of a swarm is a Docker daemon, and all the daemons communicate using the Docker API. 
+57. Docker uses a technology called namespaces to provide the isolated workspace called the container. 
+58. Docker Engine uses namespaces such as the following on Linux:
+     The pid namespace: Process isolation (PID: Process ID).
+     The net namespace: Managing network interfaces (NET: Networking).
+     The ipc namespace: Managing access to IPC resources (IPC: InterProcess Communication).
+     The mnt namespace: Managing filesystem mount points (MNT: Mount).
+     The uts namespace: Isolating kernel and version identifiers. (UTS: Unix Timesharing System).
+59. Docker Engine on Linux also relies on another technology called control groups (cgroups). A cgroup limits an application to a specific set of resources. 
+     Control groups allow Docker Engine to share available hardware resources to containers and optionally enforce limits and constraints.
+60. Union file systems, or UnionFS, are file systems that operate by creating layers, making them very lightweight and fast.
+61. Docker Engine combines the namespaces, control groups, and UnionFS into a wrapper called a container format. The default container format is libcontainer.
+62. By default, Docker runs through a non-networked UNIX socket. It can also optionally communicate using an HTTP socket.
+63. If you need Docker to be reachable through the network in a safe manner, you can enable TLS by specifying the tlsverify flag and pointing Docker’s tlscacert flag to a trusted CA certificate.
+64. If you want to secure your Docker client connections by default, you can move the files to the .docker directory in your home directory --- and set the DOCKER_HOST and DOCKER_TLS_VERIFY variables as well
+65. A custom certificate is configured by creating a directory under /etc/docker/certs.d
+66. Create the client certificates: Use OpenSSL’s genrsa and req commands to first generate an RSA key and then use the key to create the certificate.
+       $ openssl genrsa -out client.key 4096
+       $ openssl req -new -x509 -text -key client.key -out client.cert
+67. The Docker daemon interprets .crt files as CA certificates and .cert files as client certificates. 
+         If a CA certificate is accidentally given the extension .cert instead of the correct .crt extension, the Docker daemon logs the following error message:
+        
+           Missing key KEY_NAME for client certificate CERT_NAME. CA certificates should use the extension .crt.
+68. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
  
 
