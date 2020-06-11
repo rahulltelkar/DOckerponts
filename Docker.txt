@@ -890,6 +890,177 @@ Access control model
 	run
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SECURITY:
+
+1. Docker supports the following storage drivers:
+    overlay2, devicemapper, btrfs, zfs, vfs, aufs
+2. devicemapper is supported, but requires direct-lvm for production environments, because loopback-lvm, while zero-configuration, has very poor performance.
+3. The vfs storage driver is intended for testing purposes, and for situations where no copy-on-write filesystem can be used. Performance of this storage driver is poor, and is not generally recommended for production use.
+4. overlay2, aufs, and overlay all operate at the file level rather than the block level. This uses memory more efficiently, but the container’s writable layer may grow quite large in write-heavy workloads
+5. Block-level storage drivers such as devicemapper, btrfs, and zfs perform better for write-heavy workloads.
+6. btrfs and zfs require a lot of memory.
+7. zfs is a good choice for high-density workloads such as PaaS.
+8. To see what storage driver Docker is currently using, use docker info and look for the Storage Driver line:
+9. Configure loop-lvm mode for testing: The loop-lvm mode makes use of a ‘loopback’ mechanism that allows files on the local disk to be read from and written to as if they were an actual physical disk or block device.
+10. setting up loop-lvm mode can help identify basic issues (such as missing user space packages, kernel drivers, etc.) 
+11. Stop Docker: $ sudo systemctl stop docker
+12. Edit /etc/docker/daemon.json. If it does not yet exist, create it. Assuming that the file was empty, add the following contents for adding devicemapper:
+       {
+	  "storage-driver": "devicemapper"
+	}
+13. Start Docker: $ sudo systemctl start docker
+14. Production hosts using the devicemapper storage driver must use direct-lvm mode. This mode uses block devices to create the thin pool. 
+15. Direct-lvm is faster than using loopback devices, uses system resources more efficiently, and block devices can grow as needed. However, more setup is required than in loop-lvm mode.
+16. we can monitor free space on the volume using lvs or lvs -a. Consider using a monitoring tool at the OS level, such as Nagios.
+17. To view the LVM logs, you can use journalctl:
+	$ sudo journalctl -fu dm-event.service
+18. RESIZE A LOOP-LVM THIN POOL: The easiest way to resize a loop-lvm thin pool is to use the device_tool utility but you can use operating system utilities instead.
+19. Use the tool. The following example resizes the thin pool to 200GB by manually.
+      $ ./device_tool resize 200GB
+20. In loop-lvm mode, a loopback device is used to store the data, and another to store the metadata. loop-lvm mode is only supported for testing, because it has significant performance and stability drawbacks.
+21. If you are using loop-lvm mode, the output of docker info shows file paths for Data loop file and Metadata loop file:
+         $ docker info |grep 'loop file'
+22. Increase the size of the data file to 200 G using the truncate command, which is used to increase or decrease the size of a file: manually:loop-lvm:Use operating system utilities
+         $ sudo truncate -s 200G /var/lib/docker/devicemapper/data
+23. Use the pvdisplay command to find the physical block devices currently in use by your thin pool, and the volume group’s name.
+          $ sudo pvdisplay |grep 'VG Name'
+24. Activate the devicemapper after reboot: If you reboot the host and find that the docker service failed to start, look for the error, “Non existing device”. 
+      You need to re-activate the logical volumes with this command:
+        $ sudo lvchange -ay docker/thinpool
+25. The /var/lib/docker/devicemapper/metadata/ directory contains metadata about the Devicemapper configuration itself and about each image and container layer that exist.
+26. The devicemapper storage driver uses snapshots, and this metadata include information about those snapshots. These files are in JSON format.
+27. The /var/lib/docker/devicemapper/mnt/ directory contains a mount point for each image and container layer that exists.
+28. Image layer mount points are empty, but a container’s mount point shows the container’s filesystem as it appears from within the container.
+29. Another feature of devicemapper is its use of snapshots (also sometimes called thin devices or virtual devices), which store the differences introduced in each layer as very small, lightweight thin pools.
+30. Snapshots provide many benefits:
+	Layers which are shared in common between containers are only stored on disk once, unless they are writable. For instance, if you have 10 different images which are all based on alpine, the alpine image and all its parent images are only stored once each on disk.
+	Snapshots are an implementation of a copy-on-write (CoW) strategy. This means that a given file or directory is only copied to the container’s writable layer when it is modified or deleted by that container.
+	Because devicemapper operates at the block level, multiple blocks in a writable layer can be modified simultaneously.
+	Snapshots can be backed up using standard OS-level backup utilities. Just make a copy of /var/lib/docker/devicemapper/.
+31. Writing a new file: With the devicemapper driver, writing new data to a container is accomplished by an allocate-on-demand operation. Each block of the new file is allocated in the container’s writable layer and the block is written there.
+32. Writing and then deleting a file:If a container writes to a file and later deletes the file, all of those operations happen in the container’s writable layer. In that case, if you are using direct-lvm, the blocks are freed. 
+     If you use loop-lvm, the blocks may not be freed. This is another reason not to use loop-lvm in production.
+33. Volumes are the preferred mechanism for persisting data generated by and used by Docker containers.
+34. While bind mounts are dependent on the directory structure of the host machine.
+35. Volumes have several advantages over bind mounts:
+	Volumes are easier to back up or migrate than bind mounts.
+	You can manage volumes using Docker CLI commands or the Docker API.
+	Volumes work on both Linux and Windows containers.
+	Volumes can be more safely shared among multiple containers.
+	Volume drivers let you store volumes on remote hosts or cloud providers, to encrypt the contents of volumes, or to add other functionality.
+	New volumes can have their content pre-populated by a container.
+36. The -v or --volume flag was used for standalone containers and the --mount flag was used for swarm services. we can also use --mount with standalone containers.
+37. The biggest difference is that the -v syntax combines all the options together in one field, while the --mount syntax separates them.
+38. -v or --volume: Consists of three fields, separated by colon characters (:).
+	the first field is the name of the volume, and is unique on a given host machine.
+	The second field is the path where the file or directory are mounted in the container.
+	The third field is optional, and is a comma-separated list of options. ro   //read-only.
+39. --mount: Consists of multiple key-value pairs, separated by commas and each consisting of a <key>=<value> tuple. 
+40. The type of the mount, which can be bind, volume, or tmpfs
+41. The source of the mount. For named volumes, this is the name of the volume.
+42. The destination takes as its value the path where the file or directory is mounted in the container. When using volumes with services, only --mount is supported.
+43. you can create and manage volumes outside the scope of any container.
+	$ docker volume create my-vol
+44. If you start a container with a volume that does not yet exist, Docker creates the volume for you. 
+45. $ docker run -d \
+  --name devtest \						/// using mount
+  --mount source=myvol2,target=/app \
+  nginx:latest
+
+46. $ docker run -d \
+  --name devtest \
+  -v myvol2:/app \						//using -v
+  nginx:latest 
+
+47. Stop the container and remove the volume. Note volume removal is a separate step.
+	$ docker container stop devtest
+	$ docker container rm devtest
+	$ docker volume rm myvol2
+48. The following example starts a nginx service with four replicas, each of which uses a local volume called myvol2.
+	$ docker service create -d \
+	  --replicas=4 \
+	  --name devtest-service \
+ 	 --mount source=myvol2,target=/app \
+	  nginx:latest
+Use docker service ps devtest-service to verify that the service is running:
+  $ docker service ps devtest-service
+
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE            ERROR               PORTS
+4d7oz1j85wwn        devtest-service.1   nginx:latest        moby   		Running              Running 14 seconds ago
+
+49. Remove the service, which stops all its tasks:
+	$ docker service rm devtest-service
+	Removing the service does not remove any volumes created by the service. Volume removal is a separate step.
+
+50. The docker service create command does not support the -v or --volume flag.
+51. When mounting a volume into a service’s containers, you must use the --mount flag.
+52. Create a volume using a volume driver:
+	$ docker volume create --driver vieux/sshfs \
+ 	 -o sshcmd=test@node2:/home/test \
+ 	 -o password=testpassword \
+	  sshvolume
+53. If the volume driver requires you to pass options, you must use the --mount flag to mount the volume, rather than -v.
+54. Volumes are useful for backups, restores, and migrations. Use the --volumes-from flag to create a new container that mounts that volume.
+55. A Docker data volume persists after a container is deleted. There are two types of volumes
+	Named volumes have a specific source from outside the container, for example awesome:/bar.
+	Anonymous volumes have no specific source so when the container is deleted, instruct the Docker Engine daemon to remove them.
+56. To automatically remove anonymous volumes, use the --rm option
+57. To remove all unused volumes and free up space:
+	$ docker volume prune
+58. use docker system prune to clean up multiple types of objects at once.
+59. The docker image prune command allows you to clean up unused images. By default, docker image prune only cleans up dangling images. A dangling image is one that is not tagged and is not referenced by any container. 
+	$ docker image prune
+60. To remove all images which are not used by existing containers, use the -a flag: $ docker image prune -a
+61. You can limit which images are pruned using filtering expressions with the --filter flag. For example, to only consider images created more than 24 hours ago:
+	$ docker image prune -a --filter "until=24h"
+62. When you stop a container, it is not automatically removed unless you started it with the --rm flag.
+63. A stopped container’s writable layers still take up disk space. To clean this up, you can use the docker container prune command.
+	$ docker container prune
+64. By default, all stopped containers are removed. You can limit the scope using the --filter flag. $ docker container prune --filter "until=24h"
+65. Volumes can be used by one or more containers, and take up space on the Docker host. Volumes are never removed automatically, because to do so could destroy data.
+	$ docker volume prune
+66. By default, all unused volumes are removed. You can limit the scope using the --filter flag.
+	$ docker volume prune --filter "label!=keep"
+67. Docker networks don’t take up much disk space, but they do create iptables rules, bridge network devices, and routing table entries. To clean these things up, you can use docker network prune to clean up networks which aren’t used by any containers.
+68. By default, all unused networks are removed. You can limit the scope using the --filter flag.
+	$ docker network prune --filter "until=24h"
+69. DTR garbage collection can be ran in dry mode using the PARAM_DRY_RUN=true environment variable.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
