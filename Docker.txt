@@ -743,7 +743,153 @@ Use a load balancer Docker EE
 119. You can configure an external load balancer for swarm services, either in combination with the routing mesh or without using the routing mesh at all.
 120. To use an external load balancer without the routing mesh, set --endpoint-mode to dnsrr.
 121. Docker uses a concept called services to deploy applications. Services consist of containers created from the same image. Each service consists of tasks that execute on worker nodes and define the state of the application.
-122. 
+122. The ucp-interlock-proxy can be scaled up to have more replicas, and those replicas can be constrained to only those nodes that have high performance network interfaces
+123. For services to be published using Interlock Proxy, they must contain, among other labels, at least two labels where the keys are com.docker.lb.hosts and com.docker.lb.port.
+124. Update the high performance nodes by using node labels to identify them: docker node update --label-add nodetype=loadbalancer <node>
+125. Constrain the Interlock Proxy service tasks to only run on the high performance nodes using the node labels. 
+     This is done by updating the ucp-interlock service configuration to deploy the interlock proxy service with the updated constraints in the ProxyConstraints array as explained below:
+126. The Interlock Proxy polls the Docker API for changes every 3 seconds (default), so once an application is deployed, Interlock Proxy polls for the new service and finds it at http://<domain-to-route>.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SECURITY:
+
+Access control model
+
+1. Universal Control Plane (UCP) is the enterprise-grade cluster management solution from Docker. You install it on-premises or in your virtual private cloud, and it helps you manage your Docker cluster and applications through a single interface.
+2. With UCP, you can manage from a centralized place all of the computing resources you have available, like nodes, volumes, and networks. also deploy and monitor your applications and services.
+3. UCP has its own built-in authentication mechanism and integrates with LDAP services. It also has role-based access control (RBAC), so that you can control who can access and make changes to your cluster and applications.
+4. UCP integrates with Docker Trusted Registry (DTR) so that you can keep the Docker images you use for your applications behind your firewall, where they are safe and can’t be tampered with.
+5. Docker Enterprise Edition (EE) is the only Containers as a Service (CaaS) Platform for IT that manages and secures diverse applications across disparate infrastructure, both on-premises and in the cloud.
+6. A client bundle is a group of certificates downloadable directly from the Docker Universal Control Plane (UCP) user interface within the admin section for “My Profile”.
+    A client bundle contains a private and public key pair that authorizes your requests in UCP. 
+       It also contains utility scripts you can use to configure your Docker and kubectl client tools to talk to your UCP deployment.
+7. Docker Trusted Registry (DTR) is a containerized application that runs on a Docker Universal Control Plane cluster.Once you have DTR deployed, you use your Docker CLI client to login, push, and pull images.
+8. DTR internal components:When you install DTR on a node, the following containers are started:
+	dtr-api-<replica_id>: Executes the DTR business logic. It serves the DTR web application and API
+	dtr-garant-<replica_id>: Manages DTR authentication
+	dtr-jobrunner-<replica_id>: Runs cleanup jobs in the background
+	dtr-nginx-<replica_id>: Receives http and https requests and proxies them to other DTR components. By default it listens to ports 80 and 443 of the host
+	dtr-notary-server-<replica_id>: Receives, validates, and serves content trust metadata, and is consulted when pushing or pulling to DTR with content trust enabled
+	dtr-notary-signer-<replica_id>: Performs server-side timestamp and snapshot signing for content trust metadata
+	dtr-registry-<replica_id>: implements the functionality for pulling and pushing Docker images. It also handles how images are stored
+	dtr-rethinkdb-<replica_id>: A database for persisting repository metadata
+	dtr-scanningstore-<replica_id>: Stores security scanning data
+9. To allow containers to communicate, when installing DTR the following networks are created:
+	Name: dtr-ol
+	Type: overlay
+	Description: Allows DTR components running on different nodes to communicate, to replicate DTR data
+10. DTR uses these named volumes for persisting data:
+	dtr-ca-<replica_id>
+	dtr-notary-<replica_id>
+	dtr-postgres-<replica_id>
+	dtr-registry-<replica_id>
+	dtr-rethink-<replica_id>
+	dtr-nfs-registry-<replica_id>
+11. we can customize the volume driver used for these volumes, by creating the volumes before installing DTR. During the installation, DTR checks which volumes don’t exist in the node, and creates them using the default volume driver.
+	By default, the data for these volumes can be found at /var/lib/docker/volumes/<volume-name>/_data.
+12. By default, Docker Trusted Registry stores images on the filesystem of the node where it is running, but you should configure it to use a centralized storage backend.		
+13. DTR supports these storage back ends:
+	NFS, Amazon S3, cleversafe, Google cloud storage, openstack swift, Microsoft azure.
+14. Docker Enterprise is made up of three related products:
+      Docker Engine - Enterprise
+      Universal Control Plane (UCP)
+      Docker Trusted Registry (DTR)
+15. Docker Engine - Enterprise is a client-server application with these major components:
+	A server which is a type of long-running program called a daemon process (the dockerd command).
+	A REST API which specifies interfaces that programs can use to talk to the daemon and instruct it what to do.
+	A command line interface (CLI) client (the docker command).
+16. Universal Control Plane (UCP) is the enterprise-grade cluster management solution from Docker. You install it on-premises or in your virtual private cloud, and it helps you manage your Docker cluster and applications through a single interface.
+17. If nodes are not already running in a swarm when installing UCP, nodes will be configured to run in swarm mode.
+18. When you deploy UCP, it starts running a globally scheduled service called ucp-agent. This service monitors the node where it’s running and starts and stops UCP services, based on whether the node is a manager or a worker node.
+19. If the node is a: Manager: the ucp-agent service automatically starts serving
+    all UCP components, including the UCP web UI and data stores used by UCP. The ucp-agent accomplishes this by deploying several containers on the node. By promoting a node to manager, UCP automatically becomes highly available and fault tolerant.
+20. If the node is a: Worker: on worker nodes, the ucp-agent service starts serving
+    a proxy service that ensures only authorized users and other UCP services can run Docker commands in that node. The ucp-agent deploys a subset of containers on worker nodes.
+
+21.The core component of UCP is a globally scheduled service called ucp-agent. 
+22. By default, pause containers are hidden, but you can see them by running docker ps -a.
+23. There are two ways to interact with UCP: the web UI or the CLI.
+24. You can monitor the status of UCP using the web UI or the CLI. You can also use the _ping endpoint to build monitoring automation.
+25. The nodes in a swarm use mutual Transport Layer Security (TLS) to authenticate, authorize, and encrypt the communications with other nodes in the swarm.
+26. By default, the manager node generates a new root Certificate Authority (CA) along with a key pair, which are used to secure communications with other nodes that join the swarm. 
+27. we can specify your own externally-generated root CA, using the --external-ca flag of the docker swarm init command.
+28. The manager node also generates two tokens to use when you join additional nodes to the swarm: one worker token and one manager token. Each token includes the digest of the root CA’s certificate and a randomly generated secret.
+29. Each time a new node joins the swarm, the manager issues a certificate to the node. 
+30. The certificate contains a randomly generated node ID to identify the node under the certificate common name (CN) and the role under the organizational unit (OU).
+31. By default, each node in the swarm renews its certificate every three months. You can configure this interval by running the docker swarm update --cert-expiry <TIME PERIOD> command.
+32. Run docker swarm ca --rotate to generate a new CA certificate and key.
+33. we can pass the --ca-cert and --external-ca flags to specify the root certificate and to use a root CA external to the swarm. 
+34. -ca-cert and --ca-key flags to specify the exact certificate and key you would like the swarm to use.
+35. When you issue the docker swarm ca --rotate command, the following things happen in sequence:
+	1.Docker generates a cross-signed certificate. This means that a version of the new root CA certificate is signed with the old root CA certificate. This cross-signed certificate is used as an intermediate certificate for all new node certificates. 
+          This ensures that nodes that still trust the old root CA can still validate a certificate signed by the new CA.
+	2.In Docker 17.06 and higher, Docker also tells all nodes to immediately renew their TLS certificates. This process may take several minutes, depending on the number of nodes in the swarm.
+	3.After every node in the swarm has a new TLS certificate signed by the new CA, Docker forgets about the old CA certificate and key material, and tells all the nodes to trust the new CA certificate only.
+            This also causes a change in the swarm’s join tokens. The previous join tokens are no longer valid.
+36. security features you can configure and use within your Docker Engine installation.
+	1.You can configure Docker’s trust features so that your users can push and pull trusted images.
+	2.You can protect the Docker daemon socket and ensure only trusted Docker client connections.
+	3.You can use certificate-based client-server authentication to verify a Docker daemon has the rights to access images on a registry. 
+	4.You can configure secure computing mode (Seccomp) policies to secure system calls in a container. 
+	5.An AppArmor profile for Docker is installed with the official .deb packages. For information about this profile and overriding it.
+	6.You can map the root user in the containers to a non-root user.
+	7.You can also run the Docker daemon as a non-root user.
+37. There are four major areas to consider when reviewing Docker security:
+	the intrinsic security of the kernel and its support for namespaces and cgroups;
+	the attack surface of the Docker daemon itself;
+	loopholes in the container configuration profile, either by default, or when customized by users.
+	the “hardening” security features of the kernel and how they interact with containers.
+38. Use this command to create a backup of a UCP manager node.
+       docker container run \
+    --rm \
+    --interactive \
+    --name ucp \
+    --log-driver none \
+    --volume /var/run/docker.sock:/var/run/docker.sock \
+    docker/ucp \
+    backup [command options] > backup.tar
+     This command creates a tar file with the contents of the volumes used by this UCP manager node, and prints it. You can then use the restore command to restore the data from an existing backup.
+
+39. The backup contains private keys and other sensitive information. Use the --passphrase flag to encrypt the backup with PGP-compatible encryption or --no-passphrase to opt out (not recommended).
+40. If you are installing UCP on a manager node with SELinunx enabled at the daemon and operating system level, you will need to pass ` –security-opt label=disable` in to your install command. 
+    This flag will disable SELinux policies on the installation container. 
+41. Use this command to verify the UCP images on this node. This command checks the UCP images that are available in this node, and pulls the ones that are missing.
+          docker container run --rm -it \
+        --name ucp \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        docker/ucp \
+        images [command options]
+42. Use this command to install UCP on a node. Running this command will initialize a new swarm, turn a node into a manager, and install UCP.
+	docker/ucp  install [command options]
+43. Use this command to restore a UCP cluster from a backup: docker/ucp restore
+44. If the current node does not belong in a cluster, one will be initialized using the value of the --host-address flag
+45.  When restoring on an existing swarm-mode cluster, no previous UCP components must be running on any node of the cluster. This cleanup can be performed with the uninstall-ucp command.
+46. By default, the backup tar file is read from stdin. You can also bind-mount the backup file under /config/backup.tar, and run the restore command with the --interactive flag.
+47. Docker Content Trust Keys set consists of the following classes of keys:
+     an offline key that is the root of DCT for an image tag
+     repository or tagging keys that sign tags
+     server-managed keys such as the timestamp key, which provides freshness security guarantees for your repository
+48. Offline key is used create tagging key, offline key belongs to person or orgnization. resides in client-side
+49. tagging key is associated with the image repository. can used for push n pull tag images. resides in client-side
+50. Timestamp key is associated with an image repos. Tssssshis is created by docker and resides inside server,
+51. Within the Docker CLI we can sign and push a container image with the $ docker trust command syntax. This is built on top of the Notary feature set,
+52. To sign a Docker Image you will need a delegation key pair. These keys can be generated locally using $ docker trust key generate, generated by a certificate authority.
+53. If you are generating delegation keys with $ docker trust key generate, the private key is automatically added to the local trust store. (By default this is stored in ~/.docker/trust/)
+54. If you are importing a separate key, such as one from a UCP Client Bundle you will need to use the $ docker trust key load command.
+55. we will need to add the delegation public key to the Notary server; this is specific to a particular image repository in Notary known as a Global Unique Name (GUN).
+         $ docker trust signer add --key cert.pem jeff dtr.example.com/admin/demo
+56. Remote trust data for a tag or a repository can be viewed by the $ docker trust inspect command
+57. DCT is controlled by the Docker Engine’s configuration file. By default this is found at /etc/docker/daemon.json
+58. The content-trust flag is based around a mode variable instructing the engine whether to enforce signed images, and a trust-pinning variable instructing the engine which sources to trust.
+59. Currently, content trust is disabled by default in the Docker Client. To enable it, set the DOCKER_CONTENT_TRUST environment variable to 1
+60. The commands that operate with DCT are:
+         push
+	build
+	create
+	pull
+	run
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
@@ -753,6 +899,19 @@ Use a load balancer Docker EE
 
 
 
+
+
+
+
+
+      
+
+
+
+
+
+
+ 
 
 
 
