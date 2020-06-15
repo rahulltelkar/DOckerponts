@@ -440,6 +440,13 @@ IMAGE MANAGEMENT AND REGISTRY.
 145. Remove unused images: docker image prune [OPTIONS]
 146. Search the Docker Hub for images: docker search [OPTIONS] TERM
 147. Images are stored in collections, known as a repository, which is keyed by a name, as seen throughout the API specification.
+148. The content-trust flag is based around a mode variable instructing the engine whether to enforce signed images, and a trust-pinning variable instructing the engine which sources to trust.
+
+Mode can take three variables:
+
+Disabled - Verification is not active and the remainder of the content-trust related metadata will be ignored. This is the default value if mode is not specified.
+Permissive - Verification will be performed, but only failures will be logged and remain unenforced. This configuration is intended for testing of changes related to content-trust. The results of the signature verification is displayed in the Docker Engine’s daemon logs.
+Enforced - Content trust will be enforced and an image that cannot be verified successfully will not be pulled or run.
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 INSTALLATION AND CONFIGURATION.
 Complete configuration of backups for UCP and DTR
@@ -2176,35 +2183,760 @@ docker run -d \
 251. How to remove all unused images not just dangling images?
 docker system prune --all
 
+252. The commands that operate with DCT are:
+
+push
+build
+create
+pull
+run
+
+===========================================================================================================================================================================
+1. You can use local file system if you’re deploying DTR with high-availability.
+False.
+
+2.The devicemapper can only use a single block device when using direct-lvm mode.
+false
+
+3. When you're starting the docker daemon manually and see an error like the one below, what should you do?
+unable to configure the Docker daemon with file /etc/docker/daemon.json:
+the following directives are specified both as a flag and in the configurationfile: hosts: (from flag: [unix:///var/run/docker.sock], from file: [tcp://127.0.0.1:2376])
+Adjsut the flags your using to start daemon or modify the daemon.json to remove the conflicts.
+
+4. Single sign-on (SSO) with UCP can only be configured at installation
+False.
+
+5. Which type of mount is a good choice when you need to back up, restore, or migrate data from one Docker host to another?
+volumes.
+
+6. You can specify multiple labels for an object, but each key-value pair must be unique within an object.
+True.
+
+7. Which Docker feature allows operations with a remote Docker registry to enforce client-side signing and verification of image tags?
+Docker content trust.
+
+8. Which command can you use to clean up multiple types of objects (images, containers, and networks) at once?
+docker system prune.
+
+9. Docker's default container format is called?
+Libecontainer.
+
+10. To bypass the routing mesh, you can start a service using DNS Round Robin (DNSRR) mode
+True.
+
+11. To bypass the routing mesh, you must use the long --publish service and set mode to host
+True.
+
+12. Restart policies only apply to containers, not swarm services.
+True.
+
+13. Which format is the output returned, when the --pretty flag is not specified for the docker service inspect command?
+Json
+
+14. When running network in 'host' mode you can override the hostname of the container using which option of 'docker run'?
+--hostname
+
+15. Which of the following commands can be used to create a readonly volume?
+docker run -d --name test --mount source=testvol, target=/testvol,readonly ubuntu:latest
+docker run -d --name test -v testvol:/testvol:ro ubuntu:latest
 
 
+16. Which command is used to join a swarm as a worker?
+docker swarm join
+
+17. Which instruction specifies the Base Image from which you are building?
+FROM
+
+18. If the manager in a single-manager swarm fails, your services continue to run, but you need to create a new cluster to recover.
+True.
+
+19. The docker daemon is called?
+dockerd
+
+20. Which instruction copies new files, directories or remote file URLs from <src> and adds them to the filesystem of the image at the path <dest>?
+ADD
+
+21. Which option allows you to override the default Docker directory (/var/lib/docker) on Linux?
+data-root
+
+22. Which availability mode needs to be set on a node when you need to perform maintenance on a node?
+DRAIN
+
+23. Which of the following make up container format? 
+Namespaces, control groups, unionFS
+
+24. Which flag of 'docker service create' and 'docker service update' configures the time delay between updates to a service task or sets of tasks?
+--update-delay
+
+25. Docker EE is available on multiple platforms. Which of the following are not valid hardware platforms to run Docker EE?
+SUN/oracle SPARC
+
+26. Which command can you run on a manager node to retrieve the join command for a worker?
+docker swarm join-token worker
+
+27. Which instruction is required if no executable is specified in the CMD instruction?
+ENTRYPOINT
+
+28. Which command should you run to show all the nodes in a swarm?
+docker node ls
+
+29. Docker Engine uses which file system to provide the building blocks for containers?
+UnionFS
+
+30. Which flag should be specified for 'docker/dtr install' to configure DTR to have single sign-on (SSO) with UCP?
+--dtr-external-url
+
+31. Docker regularly cleans up unused objects, such as images, containers, volumes, and networks
+False
+
+32. Which docker feature allows you to control whether your containers start automatically when they exit, or when Docker restarts, and that they are started in the correct order
+Restart policy.
+
+33. Which products are included with a Docker EE software subscription
+Docker content trust
+docker universal control plane
+docekr engine with enterprise-grade support
+
+34. ____ is an instance of the Docker engine participating in the swarm.
+Node.
+
+35. Build-time variable values are not visible to anyone so it is OK to pass secret keys, user credentials, etc
+False.
+
+36. You can create a volume dynamically using which command?
+docker volume create.
+
+37. Which 'docker service update' flags are used to update the published ports of existing services?
+--publish-rm
+--publish-add
+
+38. Tasks are initialized in which state?
+NEW
+
+39. Which command is used to create a swarm
+docker swarm init
+
+40. DTR only allows deleting images if that image hasn’t been signed.
+true.
+
+41. The first instruction in a dockerfile must be?
+FROM
+
+42. The core component of UCP is a globally-scheduled service called?
+ucp-agent
+
+43. Which flag of 'docker service create' determines how many tasks are started for the service?
+--replicas
+
+44. Which command is used to create an overlay network that can be used with swarm services
+docker network create -d overlay 'network name'
+
+45. Without the quorum, administrative tasks are not possible, including scaling or updating services and joining or removing nodes from the swarm.
+true.
+
+46. If a container has files or directories in the directory to be mounted, the directory’s contents are copied into the volume and the volume is mounted
+True.
+
+47. To decrease the image pull time for geographically dispersed users you can configure which DTR option?
+DTR cache
+
+48. After joining a swarm, machines that are running Docker, are referred to as?
+nodes
+
+49. Which command is used to remove a user-defined bridge network?
+docker network rm 'network name'
+
+50. Which technology allows Docker Engine to share available hardware resources to containers and optionally enforce limits and constraints?
+control groups
+
+51. What is the default network driver used when one is not specified?
+bridge
+
+52. Which option of dockerd is useful for troubleshooting
+--debug
+
+53. Which storage driver uses block devices dedicated to Docker and operates at the block level, rather than the file level?
+devicemapper
+
+54. By default manager nodes also run services as worker nodes, but you can configure them to run manager tasks exclusively and be manager-only nodes.
+True.
+
+55. By default the docker/dtr backup will perform an online backup
+true
+
+56. In an environment where DOCKER_CONTENT_TRUST is set, which docker build flag allows individual operations on tagged images without DCT?
+--disable-content-trust
+
+57. Docker is written in which programming language?
+Go
+
+58. Instead of enabling DCT through the system-wide configuration, DCT can be enabled or disabled on a per-shell or per-invocation basis
+true
+
+59. Changing the storage driver makes any containers you have already created inaccessible on the local system.
+true.
+
+60. t is possible to take a backup while the manager is running (a “hot” backup), but this is not recommended and your results are less predictable when restoring.
+true
+
+61. Command line arguments to docker run <image> will be appended after all elements in an exec form ENTRYPOINT, and will override all elements specified using CMD.
+true
+
+62. Which two commands can get an image from a registry?
+docker pull
+docker run
+
+63. Which command is used to force a full stack trace to be logged?
+sudo kill -SIGUSR1 $(pidof dockerd)
+
+64. Docker uses which technology to provide the isolated workspace that make up the container?
+Namesapces
+
+65. Which of the following are valid states of the MANAGER STATUS column as shown when running 'docker node ls'? (select three)
+Leader, reachable, unavailable
+
+66. Which instruction allows you to configure a container that will run as an executable?
+ENTRYPOINT
+
+67. Which command is used to see the list of running services?
+docker service ls
+
+68. If you bind-mount into a non-empty directory on the container, the directory’s existing contents are obscured by the bind mount.
+True.
+
+69. Which instruction copies new files, directories from <src> and adds them to the filesystem of the container at the path <dest>?
+copy
 
 
+70. Which command is used to delete a service from the swarm?
+docker service rm
+
+71. Which flag of 'docker service create' and 'docker service update' configures the maximum number of service tasks that the scheduler updates simultaneously?
+--update-parallelism
+
+72. There are two ways to configure the Docker daemon:
+a json file congiguration
+with flags when starting docker.
+
+73. If a tasks fails during initialization it reverts to its previous state
+false.
+
+74. What mechanism allows you to organize your images, record licensing information, annotate relationships between containers, volumes, and networks, etc?
+labels
+
+75. Which command is used to scale the number of containers / tasks in a service?
+docker service scale
+
+76. Which instruction will execute any commands in a new layer on top of the current image and commit the results?
+RUN
+
+77. Which network driver connects multiple Docker daemons together and enables swarm services to communicate with each other, thereby removing the need to do OS-level routing between containers?
+overlay
+
+78. Swarm services connected to the same overlay network effectively expose all ports to each other.
+true.
+
+79. If you manually stop a container, its restart policy is ignored until the Docker daemon restarts or the container is manually restarted
+true.
+
+80. Which environment variable needs to be set in order to enable DCT on a per-shell basis?
+DOCKER_CONTENT_TRUST.
+
+81. Which flag of 'docker swarm init' enables autolocking of swarm manager nodes when Docker restarts?
+--autolock
+
+82. When running network in 'host' mode you can override the dns related settings of the host by using which options of 'docker run'?
+--dns
+--dns-search
+--dns-opt
+--hostname
+
+83. When you receive the error below, what should you do?
+docker login dtr.example.org
+x509: certificate signed by unknown authority
+Get the DTR CA certificate and configure your OS to trust that certifcate.
+
+84. What is used to define what goes on in the environment inside a container?
+Dockerfile
+
+85. Which command is used to create an overlay network that can be used with swarm services or standalone containers to communicate with other standalone containers running on other Docker daemons?
+docker network create -d overlay --attachable 'network name'
+
+86. For a port to be accessible outside of the service, that port must be published. Which of the following options to 'docker service create' are valid methods of publishing port 80 on the service to port 8080 on the routing mesh?
+-p 8080:80
+-p published=8080,target=80
+
+87. Which of the following are valid states of the AVAILABILITY column as shown when running 'docker node ls'?
+active
+Drain
+Pause
+
+88. Which ports have to be opened to allow traffic to, and from, docker hosts that will be part of an overlay network? 
+TCP port 2377 for cluster management communications
+TCP and UDP port 7946 for communication among nodes
+UDP port 4789 for overlay network traffic
+
+89. Which Docker Tool/Features is used to provision and manage multiple remote Docker hosts or Swarm Clusters?
+Docker machine
+
+90. Which network driver allows you to assign a MAC address to a container, making it appear as a physical device on your network?
+macvlan
+
+91. Which command is used to promote a worker node to be a manager?
+docker node promote
+
+92. Which instruction defines a variable that users can pass at build-time?
+ARG
+
+93. With which type of mount may the data be stored anywhere on the host system?
+bind mounts
+
+94. Docker manager nodes store the swarm state and manager logs in which location?
+/var/lib/docker/swarm/
+
+95. Docker Hub and Docker Cloud are examples of?
+docker registries
+
+96. Which command should you run to connect a running container to an existing user-defined bridge
+docker network connect 'network name' 'container name'
+
+97. Which command is used to get the state of a task?
+docker service ps
+
+98. Which file is used to configure the default logging driver?
+/etc/docker/daemon.json
+
+99. When DCT is enabled in the Docker client, docker CLI commands that operate on tagged images must either have content signatures or explicit content hashes. Which docker command does not operate with DCT?
+Load.
+
+100. What is the only instruction that may precede FROM in the Dockerfile?
+ARG
+
+101. Which type of mount is a good choice when you want to store your container’s data on a remote host or a cloud provider, rather than locally?
+volumes
+
+102. Which of the following manager node failure scenarios will be handled without downtime? 
+three-mabnger swarm tolerates a maximum loss of one manager
+a five manager swarm tolerates maximum simulataneous loss of two manager nodes.
+
+103. It recommended to write instructions in a dockerfile in UPPERCASE and arguments in lowercase
+True
+
+104. To verify that the daemon is using the devicemapper storage driver you should?
+use the docker info and verify storage driver is shown as device maper
+
+105. Which of the following are valid Docker Editions?
+Docker EE and docker CE
+
+106. Which two file persistence options are available in Docker? (File persistence allows containers to store files in the host machine, so that they are available even after the container stops)
+bind mounts and volumes
+
+107. Which command is used to create an overlay network capable of encrypting application data?
+docker network create -d overlay --opt encrypted 'network name'
+
+108. Which instruction creates a mount point with the specified name and marks it as holding externally mounted volumes from native host or other containers?
+volume
+
+109. If you use --mount to bind-mount a file or directory that does not yet exist on the Docker host, Docker does not automatically create it for you, but generates an error.
+true
+
+110. Besides the readonly image and the writable container layer, which other ways can containers take up disk space? 
+voulmes n bind mounts used by containers.
+disk spaces used for container's configuration file which are typpically small
+disk spaces used for log files if you use the json-file logging driver
+
+111. Which command is used to create a service in a swarm?
+docker service create
+
+112. Swarm management commands like docker node ls only work on manager nodes.
+true
+
+113. Which command is used on a node to remove it from the swarm?
+docker swarm leave
+
+114. Which command should you run to disconnect a running container from an existing user-defined bridge
+docker netwrok disconnect 'network name' 'conatiner name'
+
+115. Which mechanism is used exclude files and directories from the context that docker CLI uses to create an IMAGE
+.dockerigonore file
+
+116. Before signing and pushing images to DTR you should perform which actions?
+configure the notary CLI client
+import your UCP private keys to the notary client.
+
+117. Which instruction's main purpose is to provide defaults for an executing container?
+CMD
+
+118. All application data traffic is encrypted by default.
+false
+
+119. Which column of the 'docker node ls' command shows whether or not the scheduler can assign tasks to the node?
+AVAILABLITY
+
+Active means that the scheduler can assign tasks to the node.
+Pause means the scheduler doesn’t assign new tasks to the node, but existing tasks remain running.
+Drain means the scheduler doesn’t assign new tasks to the node. The scheduler shuts down any existing tasks and schedules them on an available node.
+
+120. To enable high-availability for Docker Trusted Registry (DTR) you can deploy multiple DTR replicas on different UCP workers.
+true.
+
+121. Which command can upload an image to a registry?
+docker push
+
+122. A group of machines that are running Docker and joined into a cluster is called a?
+swarm
+
+123. FROM can only appear once in a single dockerfile
+False
+
+124. Which cleanup command should be run on the manager node after another node has left the swarm?
+docker node rm
+
+125. Which command is used to live stream a container’s runtime metrics?
+docker stats
+
+126. Which dockerd flag allows you to keep your containers running during a Docker upgrade, though networking and user input are interrupted?
+--live-restore
+
+127. Which Docker feature allows you to protect the mutual TLS encryption key and the key used to encrypt and decrypt Raft logs at rest, by allowing you to take ownership of these keys and to require manual unlocking of your managers?
+autolock
+
+128. The only way to recover from losing the quorum is to use which command from a manager node?
+docker swarm init --force-new-cluster
+
+129. Running 'docker/dtr backup' will backup your DTR Metadata and Image Content
+false.
+
+130. a container’s hostname defaults to be the container’s ID in Docker
+true
+
+131. You can modify a service’s configuration, including the networks and volumes it is connected to, without the need to manually restart the service
+true.
+
+132. Docker runs instructions in a dockerfile in sequential order
+true.
+
+133. Which of the following are valid options for the '--update-failure-action' of the 'docker service create' and 'docker service update' commands?
+continue
+rollback
+pause
+
+134. What is the enterprise-grade cluster management solution from Docker called?
+docker UCP
+
+135. Which column of the 'docker node ls' command shows shows node participation in the Raft consensus?
+MANAGER STATUS
+
+136. You can set the logging driver for a specific container by using the --log-driver flag to which commands? 
+docker container create
+docker run
+
+137. You can use the 'docker swarm join-token' command to generate which types of tokens? 
+manager and worker
+
+138. A container is launched by running which of the following?
+images
+
+139. Each layer is stored in its own directory inside the Docker host’s local storage area.
+true
+
+140. All swarm service management traffic is encrypted by default.
+true
+
+141. Docker Trusted Registry (DTR) has to be installed on UCP
+true/
+
+142. What is the maximum recommended number of managers for a swarm?
+7
+
+143. Which command is used to see details about the service running in the swarm AND provide the output in easily readable format?
+docker service inspect --pretty
+
+144. Which command is used to demote a manager node to be a worker?
+docker node demote
+
+145. Which command removes all images which are not used by existing containers?
+docker image prune -a
+
+146. If you use -v or --volume to bind-mount a file or directory that does not yet exist on the Docker host, Docker does not automatically create it for you, but generates an error.
+false
+
+147. Dockerfile should specify at least one of CMD or ENTRYPOINT commands.
+true
+
+148.____ is a running container which is part of a swarm service and managed by a swarm manager, as opposed to a standalone container
+task
+
+149. Which instruction sets the user name (or UID) and optionally the user group (or GID) to use when running the image and for any RUN, CMD and ENTRYPOINT instructions that follow it in the Dockerfile?
+USER
+
+150. With which type of mount is the data stored in a part of the host filesystem which is managed by Docker (/var/lib/docker/volumes/ on Linux)?
+volumes
+
+151. _______ is the definition of the tasks to execute on the manager or worker nodes.
+service
+
+152. Which flag of docker run allows you to use a different container logging driver than the Docker daemon’s default?
+--log-driver
+
+153. Which network driver removes network isolation between the container and the Docker host, and uses the host’s networking directly?
+host
+
+154. The host networking driver is supported on which of the following?
+Linux host
 
 
+156. What happens when Docker can't find an image locally?
+It looks for the image on the Docker Hub website
+
+157. What does "docker run" do?
+You supply an image as another parameter and it will create a container from it
+
+158. How do you run an nginx web server in a container?
+docker run -d -P --name [containerName] nginx
+
+159. Which of the Dockerfile options initializes a new build stage and sets the base image for subsequent instructions?
+FROM
+
+160. Which of the following is NOT how to create an efficient image via a Dockerfile?
+Start with an appropriate base image
+Use multi-stage builds
+Avoid installing unnecessary packages
+Combine multiple applications into a single container   // correct answer
+
+161. Volume mapping maps the host server's directory into the Docker container. The data will remain in a safe and accessible place if you do which of the following?
+backup the container  //correct answer
+re-create the container
+delete the container
+migrate the container
+
+162. ________is a tool for defining and running multi-container Docker applications.
+Docker compose.
+
+163. <p>What will the following command do?</p><p> docker run -t -i ubuntu:14.04 /bin/bash</p>
+Starts ubuntu container and puts us at a command prompt inside of it
+
+164. <p>What does the "--name" parameter do in the following command?</p><p> docker run --name mywordpress --link wordpressmysql:mysql -P -d wordpress</p>
+Provides a custom name for the container that will be run
+
+165. Which​ ​command​ ​is​ ​used​ ​to​ ​place​ ​an​ ​image​ ​into​ ​a​ ​registry? 
+docker​ ​push 
+
+166. Which​ ​network​ ​allows​ ​Docker​ ​Trusted​ ​Registry​ ​components​ ​running​ ​on​ ​different​ ​nodes​ ​to communicate​ ​and​ ​replicate​ ​Docker​ ​Trusted​ ​Registry​ ​data? 
+ dtr-ol 
+
+167. Which​ ​of​ ​the​ ​following​ ​is​ ​not​ ​an​ ​endpoint​ ​exposed​ ​by​ ​Docker​ ​Trusted​ ​Registry​ ​that​ ​can​ ​be used​ ​to​ ​assess​ ​the​ ​health​ ​of​ ​a​ ​Docker​ ​Trusted​ ​Registry​ ​replica? 
+ /replica_status 
 
 
+168.  ​Which​ ​of​ ​the​ ​following​ ​endpoints​ ​exposed​ ​by​ ​Docker​ ​Trusted​ ​Registry​ ​can​ ​be​ ​used​ ​to assess​ ​the​ ​health​ ​of​ ​a​ ​Docker​ ​Trusted​ ​Registry​ ​replica? 
+ /health 
 
 
+169.  ​One​ ​of​ ​your​ ​developers​ ​is​ ​trying​ ​to​ ​push​ ​an​ ​image​ ​to​ ​the​ ​registry​ ​(dtr.example.com).​ ​The push​ ​fails​ ​with​ ​the​ ​error​ ​“denied:​ ​requested​ ​access​ ​to​ ​the​ ​resource​ ​is​ ​denied”.​ ​What​ ​should​ ​you verify​ ​the​ ​user​ ​has​ ​completed? 
+ docker​ ​login​ ​-u​ ​<username>​ ​-p​ ​<password> dtr.example.com 
 
 
+170. You​ ​have​ ​been​ ​asked​ ​to​ ​backup​ ​the​ ​swarm​ ​state​ ​on​ ​a​ ​Linux​ ​installation.​ ​By​ ​default,​ ​where do​ ​Docker​ ​manager​ ​nodes​ ​store​ ​the​ ​swarm​ ​state​ ​and​ ​manager​ ​logs? 
+ /var/lib/docker/swarm 
+
+171. Which​ ​of​ ​the​ ​following​ ​will​ ​put​ ​the​ ​Docker​ ​engine​ ​into​ ​debug​ ​mode? 
+ echo  '{"debug":​ ​true}'​ ​>​ ​/etc/docker/daemon.json​ ​;​ ​sudo​ ​kill​ ​-HUP​ ​<pid​ ​of dockerd>  
 
 
+172.  ​How​ ​do​ ​you​ ​deploy​ ​4​ ​new​ ​instances​ ​of​ ​nginx​ ​with​ ​a​ ​single​ ​command? 
+docker​ ​service​ ​create​ ​--replicas​ ​4​ ​--name​ ​myservice​ ​nginx 
+
+173. You​ ​are​ ​using​ ​self-signed​ ​UCP​ ​certs​ ​and​ ​have​ ​a​ ​second​ ​DNS​ ​name​ ​that​ ​points​ ​to​ ​your internal​ ​controllers.​ ​When​ ​installing​ ​UCP,​ ​which​ ​flag​ ​should​ ​you​ ​use​ ​to​ ​add​ ​this​ ​additional name? 
+ --san 
+
+174. following are valid values of the --restart flag for docker run
+always
+on-failure
+no
+unless stopped.
+
+175. To configure the restart policy for a container, use the --restart flag when using the docker run command. 
 
 
+176. If you want to create a services but prevent it from being deployed you should?
+scale the service to 0
+
+177. Which instruction informs Docker that a container listens on specified network ports at runtime?
+EXPOSE.
+
+178. Which type of file defines how Docker containers should behave in production?
+docker-compose.yml
+
+179. Docker can manage the block device for you, simplifying configuration of direct-lvm mode, when using the devicemapper storage driver
+true
+
+180. On Linux systems the Docker daemon is configured using a JSON file, create a file at?
+/etc/docker/daemon.json
+
+181. When the container starts, it can be connected to multiple networks using '--network'
+false.
+
+182. Which instruction sets the working directory for any RUN, CMD, ENTRYPOINT, COPY and ADD instructions that follow it in the Dockerfile?
+WORKDIR
+
+183. Which type of mount has the side effect that you can change the host filesystem via processes running in a container, includ
+bind mounts
+
+184. Which 'docker create' option allows you to join a container to a network?
+--network
+
+185. Which command is used to enable swarm mode and make the machine, where the command is run, the current machine a swarm manager?
+docker swarm init
+
+186. Macvlan networks can be created in which of the following modes?
+In bridge mode, macvlan traffic goes through a physical device on the host.
+In 802.1q trunk bridge mode, traffic goes through an 802.1q sub-interface which Docker creates on the fly. This allows you to control routing and filtering at a more granular level.
+
+187. By default, a container has no resource constraints and can use as much of a given resource as the host’s kernel scheduler allows.
+true.
+
+188. You can remove unused volumes using which command?
+docker volume prune
+
+189. In order to scale your app with docker stack deploy, it is required to tear down the existing stack first
+false.
+
+190. Which command is used to create a user-defined bridge network?
+docker network create 'netwrok name'
+
+191. Which two new networks are created on a Docker host when you initialize a swarm or join a Docker host to an existing swarm?
+an overlay network called ingress, which handles control and data traffic related to swarm services. 
+a bridge network called docker_gwbridge, which connects the individual Docker daemon to the other daemons participating in the swarm.
+
+192. When Docker is running in swarm mode, you cant run standalone containers on any of the Docker hosts participating in the swarm.
+false.
+
+193. The major difference between a container and an image is?
+the top writable layer. 
+
+194. Docker CE is available on multiple platforms. Which of the following are not valid operating systems to run Docker CE Server?
+windows server 2012.
+
+195. Docker has an enterprise-grade image storage solution that you can install behind your firewall so that you can securely store and manage the Docker images you use in your applications. What is it called?
+Docker trust registry
+
+196. Which docker components can be described as "an executable package that includes everything needed to run an application--the code, a runtime, libraries, environment variables, and configuration files"?
+image
+
+197. How long after a container successfully starts does a docker restart policy start monitoring the container?
+10 seconds
+
+199. Restart policies only apply to containers. Restart policies for swarm services are configured differently. 
+
+200. Which command builds a docker image from a dockerfile?
+docker build
+
+201. Which flags of 'docker swarm update' enable and/or disable autolock on an existing swarm?
+--autolock=true
+--autolock=false
+
+202. To have high-availability on UCP and DTR, you need a minimum of?
+3 dedicated nodes to install UCP with HA and 3 dedicated nodes to install DTR with HA
+
+203. Which instruction adds metadata to an image?
+label
+
+204. In the output below, what do the IDs next to the "Pull complete" message indicate?
+$ docker pull ubuntu:15.0415.04:
+
+Pulling from library/ubuntu
+
+1ba8ac955b97: Pull complete
+
+f157c4e5ede7: Pull complete
+
+0b7e98f84c4c: Pull complete
+
+a3ed95caeb02: Pull complete
+Digest: sha256:5e279a9df07990286cce22e1b0f5b0490629ca6d187698746ae5e28e604a640e
+
+Status: Downloaded newer image for ubuntu:15.04
+
+LAYERS OF THE IMAGES.
+
+205. Which docker component can be described as "a runtime instance of an image"?
+Container.
+
+206. Which command is used to see which nodes are running the service?
+docker service ps
+
+207. Which command shows information logged by a running container?
+docker logs
+
+208. In which model, does the swarm manager distribute a specific number of replica tasks among the nodes based upon the scale you set in the desired state?
+replicated.
+
+209. Which actions allow you to scale an app? 
+execute the docker stack deploy command
+change the replica value in docker-compose.yml file
+
+210. Which docker feature enables each node in the swarm to accept connections on published ports for any service running in the swarm, even if there’s no task running on the node? 
+Hint: The features also routes all incoming requests to published ports on available nodes to an active container.
+
+routing mesh.
 
 
+211. Docker CE is available on multiple platforms. Which of the following are valid operating systems to run Docker CE Desktop?
+windows 10 and Macos
+
+212. The ucp-agent runs on both manager and worker nodes
+True 
+
+213. With which type of mount is the data stored in the host system’s memory only?
+tempfs
+
+214. Which of the following is not a supported logging driver?
+azurelogs
+
+215. Which two modes does Docker provide for delivering messages from the container to the log driver?
+blocking and non blocking
+
+216. Services are really just “containers in production.”
+true.
+
+217. Which docker run flag should you use to configure the restart policy for a container?
+--restart
+
+218. Which type of mount is a good choice when you do not want the data to persist either on the host machine or within the container?
+tempfs
+
+219. Which command will drain a node that had a task assigned to it?
+docker node update --availability drain.
+
+220.Each storage driver handles the implementation differently, but all drivers use stackable image layers and the copy-on-write (CoW) strategy.
+True
+
+221. You can configure DTR to use your own certificates, so that it is automatically trusted by your users’ browser and client tools
+True
+
+222. The EXPOSE instruction does not actually publish the port.
+true
+
+223. By default Docker Swarm uses which default address pool?
+10.0.0.0/8
+
+224. There are two ways to run the Engine in swarm mode:
+Create a new swarm
+Join an existing swarm.
+
+225. After restoring a swarm backup you should run 'docker swarm init' with which flag to ensure that the node does not attempt to connect to nodes that were part of the old swarm?
+--force-new-cluster
+
+226. Which instruction is used to set environmental variables?
+ENV 
+
+227.In which model, does the swarm manager run one task for the service on every available node in the cluster?
+global
 
 
-
-
-
-
-
-
-
-
-
+228. Setting a node to DRAIN also removes standalone containers from that node, freeing it up completely.
+false
 
 
 
