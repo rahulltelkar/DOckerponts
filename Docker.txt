@@ -2938,98 +2938,409 @@ global
 228. Setting a node to DRAIN also removes standalone containers from that node, freeing it up completely.
 false
 
+229. Dockerfile option EXPOSE publish the port to external systems. True or false?
+False.
 
+230. What Dockerfile option EXPOSE does?
+Informs Docker that the container listens on the specified network ports at runtime
 
 
+231. Which of the Dockerfile options executes any commands in a new layer on top of the current image and commit the results?
+RUN
 
 
+232. What Dockerfile option LABEL does?
+Adds metadata to an image
 
 
+234. which of the following Dockerfile options creates a mount point with the specified name and marks it as holding externally mounted volumes from native host or other containers?
+VOLUME
 
+235. which of the following is NOT how to create an efficient image via a Dockerfile?
+Combine multiple applications into a single container
 
 
+236. Which of the following docker image commands display detailed information on one or more images?
+docker image inspect
 
 
+237. What docker image prune command does?
+Remove unused images
 
 
+238. what does docker image rm command do?
+Remove one or more images
 
 
+239. Which of the Dockerfile options initializes a new build stage and sets the base image for subsequent instructions?
+FROM
 
+240. Which of the following is the correct command to store an image to a registry?
+docker push [OPTIONS] NAME[:TAG]
 
+241. Which of the following is NOT a valid way to tag a Docker image?
+Tag an image referenced by user ID
 
-      
 
+243. What is the docker command for displaying layers of a Docker image?
+docker history
 
 
+244. What is the docker command to pull an image or a repository from a registry?
+docker pull
 
+245. Which of the following is the correct command to tag an image?
+docker tag SOURCE_IMAGE[:TAG] TARGET_IMAGE[:TAG]
 
 
- 
+246. Docker image is built up from a series of layers and each layer represents an instruction in the image's Dockerfile. True or false?
+True
 
+247. Each container shares common writeable container layer. True or false?
+False
 
+248. What is the image storage solution that is part of Docker Enterprise Edition called?
+Docker Trusted Registry
 
 
+249. What is the docker command to remove one or more images?
+docker image rm
 
 
+250. Which of the following is the docker command to enable autolock on an existing swarm cluster?
+docker swarm update --autolock=true
 
 
+251. What is the difference between a replicated and a global service?
+Number of identical tasks can be specified for a replicated service. There is no pre-specified number of tasks for global service.
 
+252. What are the two types of docker swarm services?
+replicated and global services
 
 
+253. What is the default format of docker inspect output?
+json
 
+254. What is the function of docker inspect command?
+To return low-level information on Docker objects
 
+255. Which of the following is NOT true about Raft (docker consensus algorithm)?
+Raft tolerates up to (N-2)/2 failures //correct answer
+Raft requires a majority or quorum of (N/2) + 1 members
+If a quorum is not reached, the system will not process any more requests to schedule additional tasks
+If a quorum is not reached, the existing tasks will keep running
 
 
+256. What is the docker command to add a placement preference?
+docker service update --placement-pref-add
 
+257. What is the docker command to roll back to the previous version of a service?
+docker service update --rollback
 
+258. What is the docker command to update an existing service?
+docker service update
 
+259. What is the docker command to increase number of replicas?
+docker service scale
 
+260. What is the docker command to add or update a placement constraint?
+docker service update --constraint-add
 
+261. What is the docker command to add a network to a service?
+docker service update --network-add
 
 
+262. What is the docker command to add or update a node label?
+docker node update --label-add
 
 
+263. What is the docker command to add or update a published port?
+docker service update --publish-add
 
 
+264. What is the docker command to add or update a mount on a service?
+docker service update --mount-add
 
+265. How to configure the default logging driver? 
+Set the "log-driver" option in the daemon.json file
 
 
+266. What is the correct order to backup Docker EE components?
+Back up swarm, UCP, then DTR
 
+267. What is the recommended approach to set storage driver?
+Set the "storage-driver" option in the daemon.json file
 
 
+268. What is the docker command to add a node to a swarm?
+docker swarm join
 
 
+269. What is the docker command to see the storage driver Docker is currently using?
+docker info
 
+270. What is the docker command to find the current logging driver for a running container?
+docker inspect
 
 
+271. What is the docker command to setup a swarm?
+docker swarm init
 
 
+272. What is the docker command to backup the UCP?
+docker/ucp backup
 
+273. What is the correct order to upgrade a Docker cluster?
+Upgrade engine and kernel, UCP, and then DTR
 
+274. What is the docker command to see container logs?
+docker logs
 
+275. how to configure the Docker daemon to start on boot?
+Use systemd for most current Linux distributions (RHEL, CentOS, Fedora, Ubuntu 16.04 and higher)
+Use upstart for Ubuntu 14.10 and below
 
+276. Which  tool to use to create users and teams? 
+Universal Control Plane (UCP)
 
- 
 
+277. What is the endpoint that we can use to check the health of a single UCP manager node?
+https:///_ping
 
+278. You can monitor the status of UCP by using the web UI or the CLI. True or false? 
+True
 
 
+279. What is the docker command to connect a running container to an existing user-defined bridge?
+docker network connect
 
+280. Which network driver type is best when you are migrating from a VM setup or need your containers to look like physical hosts on your network, each with a unique MAC address?
+Macvlan networks
 
+281. Which network driver type is best when you need containers running on different Docker hosts to communicate, or when multiple applications work together using swarm services?
+Overlay networks
 
+282. What is the docker command to display detailed information on one or more networks?
+docker network inspect
 
+283. Which network driver type is best when the network stack should not be isolated from the Docker host, but you want other aspects of the container to be isolated?
+Host networks
 
+284. What is the docker run option to publish a port so that an application is accesible externally?
+docker run --publish
 
+285. Which  docker command can be used to find out all the ports mapped?
+docker port
+docker ps
+docker inspect
 
+286. What is the docker command to create a bridge network?
+docker network create
 
 
+287. Which network driver type is best when you need multiple containers to communicate on the same Docker host?
+User-defined bridge networks
 
+288. What type of network is ingress network?
+overlay network
 
+289. What is the docker command to create a container with custom DNS server(s)?
+docker container create --dns=IP_ADDRESS
 
+290. What is the command to set DNS server for all Docker containers?
+dockerd --dns IP_ADDRESS
 
-     
+291. Publishing a service's port using the routing mesh makes the service accessible at the published port on every swarm node. True or false?
+True
 
+292. Where is the option to integrate Docker Enterprise with LDAP?
+Universal Control Plane
 
+293. What are the two types of UCP client bundles?
+Admin user certificate bundles and user certificate bundles
+
+294. Docker security scan result is available in both UCP and DTR. True or false?
+false.
+
+295. What are the steps needed to sign images in a way that UCP trusts them?
+Initialize trust metadata for the repository
+Delegate signing to the keys in your UCP client bundle
+Configure Notary client
+
+
+296. What is the difference between UCP workers and managers?
+ucp-agent service automatically starts serving all UCP components in manager node, and only a proxy service in worker node
+
+297. Docker security scan can be started by all users including those with read-only access. True or false?
+False
+
+298. What is the command that need to be executed to sign an image before pushing it to repository?
+export DOCKER_CONTENT_TRUST=1
+
+299. What is a grant made up of in Docker's Role Based Access Controls (RBAC)? 
+Role
+Subject
+Resource collection
+
+300. Where do you create Docker Role Based Access Controls (RBAC)?
+Universal Control Plane
+
+301. Which of the following best describes the procedure for backing up the Universal Control Plane (UCP) metadata?
+Answer : Run a container from the ucp image with the backup command.
+
+    
+302. Which of the following commands  is correct if container exits due to an error, which manifests as a non-zero exit code.
+docker run --restart on-failure nginx
+
+303. Which Docker edition would you choose for obtaining the latest Docker Engine updates?
+Either Docker CE or Docker EE
+
+304. Which of the following is not backed up when performing a Docker Trusted Registry (DTR) metadata backup?
+Docker images.
+
+305. Which of the following commands will ensure that a container uses a maximum of 1 GB of active memory?
+docker run --memory 1G nginx
+
+306. Niels has an application that consists of multiple different containers that interact with one another. What should he use to manage this application in a Docker Swarm?
+Niels should use a stack .
+
+307. Danny wants to prevent Docker Swarm encryption keys from being stored insecurely on her swarm managers. How can he tackle enforcing a lock on the swarm cluster?
+Danny can use the --autolock=true flag with the docker swarm update command.
+
+308. Where can you get a repository URL for installing the Docker Enterprise Edition (EE)?
+Docker Hub
+
+
+309. Describe what the RUN directive does.
+The RUN directive executes a command and commits the resulting changed files as a new layer in the image.
+
+310. Paul have some containerized software that needs to have a reference to the hostname of the node that the software is running on. Which of the following commands Paul will pass the node hostname as an environment variable into each task in a service?
+docker service create --env NODE_HOSTNAME="{{.Node.Hostname}}" nginx
+
+311. Which of the below statements does not apply to the WORKDIR directive?
+It affects only the build and does not impact containers that run from the image.
+
+312. Which of the following commands can we use to view detailed metadata about a container?
+docker inspect docker container inspect
+
+313. What does the EXPOSE directive do?
+It documents ports intended for publishing at the time of running a container.
+
+314. Which of the following statements truly applies to the ENV directive?
+It sets environment variables that are made available in subsequent build steps and to containers at the runtime.
+
+315. What command would we use to locate the layered file system data for an image on a machine?
+docker image inspect
+
+316. Which of the following namespaces is not enabled by default?
+user
+
+317. the principle of least privilege, which of the following methods can be used to securely grant access to the specific user to communicate to a Docker engine?
+Add the user to the 'docker' group on the server or specify the group with the '--group' Docker daemon option.
+Utilize openssl to create TLS client and server certificates, configuring the Docker engine to use with mutual TLS over TCP.
+
+318. What behavior is expected when a service is created with the following command: 'docker service create --publish 8080:80 nginx'?
+All nodes in the cluster will listen on port 8080 and forward to port 80 in the container.
+
+319. Which flag for a service would allow a container to consume more than 2 GB of memory only when there is no memory contention but would also prevent a container from consuming more than 4GB of memory, in any case?
+--limit-memory 4GB --reserve-memory 2GB
+
+320. What is the purpose of a client bundle in the Universal Control Plane?
+Authenticate a user using client certificates to the Universal Control Plane
+
+321. A service 'wordpress' is running using a password string to connect to a non-Dockerized database service. The password string is passed into the 'wordpress' service as a Docker secret. Per security policy, the password on the database was changed.
+Identity the correct sequence of steps to rotate the secret from the old password to the new password.??
+
+Create a new docker secret with a new password. Trigger a rolling update of the "wordpress" service, by using "-- secret-rm" & "--secret-add" to remove the old secret and add the updated secret.
+
+
+322. A user is having problems running Docker. Which of the following will start Docker in debug mode?
+Set the debug key to true in the 'daemon.json' file.
+
+323. Which of the following is true about overlay networks?
+Overlay networks are first created on the manager nodes. Then they are created on the worker nodes once a task is scheduled on the specific worker node.
+
+324. Which of the following is required to install Docker EE from a package repository?
+Repository URL obtained from Docker Store
+
+325. Which one of the following commands will result in the volume being removed automatically once the container has exited?
+'docker run --rm -v /foo busybox'
+
+326. What is the purpose of Docker Content Trust?
+Signing and verification of image tags
+
+327. What is one way of directly transferring a Docker Image from one Docker host in another?
+'docker save' the image to save it as TAR file and copy it over to the target host. Then use 'docker load' to un-TAR the image back as a Docker image.
+
+328. What is the difference between the ADD and COPY dockerfile instructions?
+ADD supports compression format handling while COPY does not.
+ADD support remote URL handling while COPY does not.
+
+329. Which of the following commands starts a Redis container and configures it to always restart unless it is explicitly stopped or Docker is restarted?
+docker run -d --restart unless-stopped redis
+
+330. Which of these swarm manager configurations will cause the cluster to be in a lost quorum state?
+1 manager of which 1 is healthy.
+3 managers of which 2 are healthy.
+4 managers of which 2 are healthy.
+5 managers of which 3 are healthy.// correct 
+
+
+331. A container named "analytics" that stores results in a volume called "data" was created. docker run -d --name=analytics -v data:/data webapp. How are the results accessed in "data" with another container called "dbapp"?
+docker run -d --name=reports --volume-from=analytics dbapp
+
+
+332. Which statement is true about DTR garbage collection?
+Garbage collection removes unreferenced image layers from DTR's backend storage.
+
+333. When seven managers are in a swarm cluster, how would they be distributed across three datacenters or availability zones?
+3/2/2
+
+334. What is the difference between a resource limit and a resource reservation when scheduling services?
+A resource limit is hard limit for your service, while a reservation is used to find a host with adequate resources for scheduling.
+
+335. In Docker Trusted Registry, how would a user prevent an image, for example 'nginx:latest' from being overwritten by another user with push access to the repository?
+Use the DTR web UI to make the tag immutable.
+
+336. A docker service 'web' is running with a scale factor of 1 (replicas = 1). Bob intends to use the command 'docker service update --replicas=3 web'. Alice intends to use the command 
+'docker service scale web=3'. How do the outcomes of these two commands differ?
+
+Bob's command updates the number of replicas of the 'web' service to 3. Alice's command results in an error.
+
+
+337. Which constraint role you use if you want to restrict a service to be scheduled in a manager in the Swarm cluster?
+node.role == manager
+
+338. Which of the following constitutes a production-ready devicemapper configuration for the docker engine? 
+Utilize the '--storage-opt dm.directlvm_device' Docker daemon option, specifying a block device.
+
+339. Which of the following statement is true about secrets?
+Secrets can be created from any node in the cluster
+Secrets are stored unencrypted on manager nodes
+Secrets can be modified after they are created
+Secrets can be created using standard input (STDIN) and a file   // correct answer.
+
+340. what service mode is used to deploy a single task of a service to each node?
+Global
+
+
+341. How do you configure Docker engine to use a registry that is not configured with TLS certificates from a trusted CA?
+Pass the '--insecure-registry' flag to the daemon at run time.
+
+342. What is the recommended way to configure the daemon flags and environment variables for your Docker daemon in a platform independent way?
+Set the configuration options in '/etc/docker/daemon.json'
+
+343. The following health check exists in a Dockerfile: 
+
+'HEALTCHECK CMD curl --fail http://localhost/health || exit 1'
+
+Which of the following describes its purpose?
+
+Defines the action taken when container health fails, which in this case will kill the container with exit status 1.
+
+344. Which of the following modes can be used for service discovery of a Docker swarm service
+Virtual IP (VIP) with --endpoint-mode vip
+DNS Round-Robin with --endpoint-mode dnsrr
 
 
 
